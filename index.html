@@ -561,9 +561,32 @@ select option { background: var(--surface2); }
       <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><path d="M8 1L1 8l7 7"/></svg>
     </button>
     <div class="topbar-title">Workout Plan</div>
-    <button class="btn btn-sm btn-primary" onclick="showNewPlanModal()">New</button>
+    <div style="display:flex;gap:6px;"><button class="btn btn-sm btn-secondary" onclick="showInjuryProfile()">🩺 Profile</button><button class="btn btn-sm btn-primary" onclick="showNewPlanModal()">New</button></div>
   </div>
   <div class="scroll-body" id="plan-body"></div>
+</div>
+
+
+<!-- PLAN BUILDER SCREEN -->
+<div id="screen-plan-builder" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-plan');renderPlan()">
+      <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><path d="M8 1L1 8l7 7"/></svg>
+    </button>
+    <div class="topbar-title">Plan Builder</div>
+  </div>
+  <div class="scroll-body" id="plan-builder-body"></div>
+</div>
+
+<!-- INJURY PROFILE SCREEN -->
+<div id="screen-injury" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-plan');renderPlan()">
+      <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><path d="M8 1L1 8l7 7"/></svg>
+    </button>
+    <div class="topbar-title">Injury Profile</div>
+  </div>
+  <div class="scroll-body" id="injury-body"></div>
 </div>
 
 <!-- MODALS -->
@@ -577,18 +600,15 @@ select option { background: var(--surface2); }
 <div id="toast" class="toast"></div>
 
 <script>
-const INJURY_CONTEXT = `You are an expert strength training coach and sports medicine advisor for a 41-year-old intermediate-advanced bodybuilder (5 years training, 205 lbs, ~14% BF). You give concise, direct, science-based advice.
-
-PERMANENT INJURY CONSTRAINTS (never suggest violating these):
-- Left shoulder labrum repair (15yr ago): NO overhead pressing ever
-- Right AC joint separation (Nov 2025, recovering): Light chest only — cable flies stop at shoulder parallel, lateral raises stop below shoulder height, no barbell bench, no dips, no heavy horizontal pressing
-- Bilateral Morton's neuroma: NO forefoot calf loading — seated calf raise only
-- Right GTPS (greater trochanteric pain syndrome): Weak glute med — high foot plate on leg press mandatory, avoid deep hip flexion under load, monitor hip abduction
-- Bilateral patellar tendinopathy: Mostly resolved — monitor under load
-
-TRAINING PRINCIPLES: Progressive overload, full pain-free ROM, eccentric emphasis, 0-1 RIR last set, 1-4 RIR working sets, 8-20 rep range, frequency over single-session volume.
-
-Be warm but concise. Flag pain concerns immediately. Give specific progression numbers when recommending.`;
+function buildInjuryContext() {
+  const base = `You are an expert strength training coach and sports medicine advisor. You give concise, direct, science-based advice. Be warm but concise. Flag pain concerns immediately. Give specific progression numbers when recommending.`;
+  if (!state.injuryProfile || !state.injuryProfile.length) return base;
+  const constraints = state.injuryProfile.map(inj =>
+    `- ${inj.diagnosis}${inj.notes ? ': ' + inj.notes : ''} [${inj.severity}]`
+  ).join('\n');
+  return base + `\n\nINJURY PROFILE (respect these always):\n` + constraints + `\n\nTRAINING PRINCIPLES: Progressive overload, full pain-free ROM, eccentric emphasis, 0-1 RIR last set, 1-4 RIR working sets, 8-20 rep range, frequency over single-session volume.`;
+}
+const INJURY_CONTEXT = buildInjuryContext();
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -732,6 +752,8 @@ let state = {
   currentMesocycle: 1,
   currentMinicycle: 1,
   draft: null,
+  injuryProfile: [],
+  minicyclesPerMeso: 5,
 };
 
 let currentLog = null;
@@ -1076,16 +1098,62 @@ function toggleWarmup(id) {
 }
 
 function toggleSkipExercise(idx) {
+  saveSessionDraft();
   currentLog.exercises[idx].skipped = !currentLog.exercises[idx].skipped;
   renderLog();
 }
 
+function saveSessionDraft() {
+  if (currentLog) {
+    localStorage.setItem('tl_session_draft', JSON.stringify(currentLog));
+    const el = document.getElementById('log-save-status');
+    if (el) el.textContent = '✓ saved';
+  }
+}
+function clearSessionDraft() {
+  localStorage.removeItem('tl_session_draft');
+}
+function checkResumeDraft() {
+  try {
+    const raw = localStorage.getItem('tl_session_draft');
+    if (!raw) return false;
+    const draft = JSON.parse(raw);
+    if (!draft || !draft.sessionKey) return false;
+    const mins = Math.round((Date.now() - new Date(draft.date).getTime()) / 60000);
+    const timeStr = mins < 60 ? mins + 'm ago' : Math.round(mins/60) + 'h ago';
+    // Show resume banner
+    const banner = document.createElement('div');
+    banner.id = 'resume-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--info);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-size:14px;';
+    banner.innerHTML = `<div><strong>Resume session?</strong><br><span style="font-size:12px;opacity:0.85">Session ${draft.sessionKey} started ${timeStr}</span></div><div style="display:flex;gap:8px;"><button onclick="resumeSession()" style="background:#fff;color:var(--info);border:none;border-radius:6px;padding:6px 12px;font-weight:600;cursor:pointer;">Resume</button><button onclick="dismissResume()" style="background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;">Discard</button></div>`;
+    document.body.appendChild(banner);
+    return true;
+  } catch(e) { return false; }
+}
+function resumeSession() {
+  try {
+    const raw = localStorage.getItem('tl_session_draft');
+    if (!raw) return;
+    currentLog = JSON.parse(raw);
+    dismissResume();
+    renderLog();
+    showScreen('screen-log');
+  } catch(e) { showToast('Could not resume session'); }
+}
+function dismissResume() {
+  clearSessionDraft();
+  const b = document.getElementById('resume-banner');
+  if (b) b.remove();
+}
 function updateSet(exIdx, setIdx, field, val) {
   currentLog.exercises[exIdx].sets[setIdx][field] = val;
-  document.getElementById('log-save-status').textContent = '● unsaved';
+  saveSessionDraft();
+  const el = document.getElementById('log-save-status');
+  if (el) el.textContent = '✓ saved';
 }
 
 function addSet(exIdx) {
+  saveSessionDraft();
   const ex = currentLog.exercises[exIdx];
   const lastSet = ex.sets[ex.sets.length - 1];
   ex.sets.push({ weight: lastSet ? lastSet.weight : '', reps: lastSet ? lastSet.reps : '', rir: lastSet ? lastSet.rir : '' });
@@ -1093,6 +1161,7 @@ function addSet(exIdx) {
 }
 
 function removeSet(exIdx) {
+  saveSessionDraft();
   const ex = currentLog.exercises[exIdx];
   if (ex.sets.length > 1) { ex.sets.pop(); renderLog(); }
 }
@@ -1175,6 +1244,7 @@ function finishSession() {
 
   // Save session
   state.sessions.push({ ...currentLog });
+  clearSessionDraft();
   save();
 
   // Update minicycle counter
@@ -1270,6 +1340,7 @@ function submitPostSession() {
     save();
   }
 
+  checkMesoTransition();
   buildChatFromPost(r);
 }
 
@@ -1633,13 +1704,39 @@ function saveNewExercise() {
 
 function renderPlan() {
   const plan = getActivePlan();
-  let html = `
-    <div class="card card-accent-accent">
+  let html = '';
+
+  // All plans list with swap
+  if (state.plans.length > 1) {
+    html += `<div class="section-title" style="margin-bottom:8px;">Your Plans</div>`;
+    state.plans.forEach(p => {
+      const isActive = p.id === state.activePlanId;
+      html += `<div class="card" style="margin-bottom:8px;${isActive?'border-color:var(--accent)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${p.name} ${isActive?'<span style=\"color:var(--accent);font-size:11px;\">● ACTIVE</span>':''}</div>
+            <div style="font-size:12px;color:var(--muted);">${p.minicycleSize}-session minicycle</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            ${!isActive ? `<button class="btn btn-sm btn-primary" onclick="switchActivePlan('${p.id}')">Use</button>` : ''}
+            <button class="btn btn-sm btn-secondary" onclick="startPlanBuilder('${p.id}')">Edit</button>
+            ${!isActive ? `<button class="btn btn-sm" style="background:var(--warn);color:#fff;" onclick="deletePlan('${p.id}')">Del</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    });
+  } else {
+    html += `<div class="card card-accent-accent">
       <div class="label">Active Plan</div>
       <div style="font-size:17px;font-weight:600;">${plan.name}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:2px;">${plan.minicycleSize}-session minicycle</div>
-    </div>
-    <div class="section-title">Muscle frequency this plan</div>`;
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <div style="font-size:13px;color:var(--muted);">${plan.minicycleSize}-session minicycle</div>
+        <button class="btn btn-sm btn-secondary" onclick="startPlanBuilder('${plan.id}')">Edit</button>
+      </div>
+    </div>`;
+  }
+
+  html += `<div class="section-title">Muscle frequency this plan</div>`;
 
   const freq = {};
   plan.sessions.forEach(sess => {
@@ -1663,7 +1760,216 @@ function renderPlan() {
 }
 
 function showNewPlanModal() {
-  showToast('AI Plan Builder coming in Phase 2!');
+  openModal(`
+    <div style="padding:16px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">New Workout Plan</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Create a custom plan or let AI build one</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-primary btn-full" onclick="closeModal();startPlanBuilder()">✏️ Build it myself</button>
+        <button class="btn btn-secondary btn-full" onclick="closeModal();showAIPlanBuilder()">✨ AI plan recommendation</button>
+      </div>
+    </div>
+  `);
+}
+
+function startPlanBuilder(editPlanId) {
+  const editing = editPlanId ? state.plans.find(p=>p.id===editPlanId) : null;
+  const plan = editing ? JSON.parse(JSON.stringify(editing)) : {
+    id: uid(), name: '', minicycleSize: 4,
+    sessions: [
+      { key:'A', name:'Session A', focus:'', color:'#c8f135', warmup:[], exercises:[] },
+      { key:'B', name:'Session B', focus:'', color:'#6eaecf', warmup:[], exercises:[] },
+      { key:'C', name:'Session C', focus:'', color:'#f1a035', warmup:[], exercises:[] },
+      { key:'D', name:'Session D', focus:'', color:'#cf6ecf', warmup:[], exercises:[] },
+    ]
+  };
+  window._buildingPlan = plan;
+  renderPlanBuilder();
+  showScreen('screen-plan-builder');
+}
+
+function renderPlanBuilder() {
+  const plan = window._buildingPlan;
+  // Compute muscle frequency
+  const freq = {};
+  plan.sessions.forEach(sess => {
+    sess.exercises.forEach(ex => {
+      const exData = getExercise(ex.exerciseId);
+      if (!exData) return;
+      exData.primary.forEach(m => freq[m] = (freq[m]||0) + 1);
+    });
+  });
+  const freqHtml = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([m,f]) =>
+    `<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:3px 10px;font-size:12px;margin:2px;">${m} ${f}×</span>`
+  ).join('');
+
+  let html = `<div style="padding:16px;">
+    <div class="label" style="margin-bottom:6px">Plan Name</div>
+    <input type="text" id="pb-name" value="${plan.name}" placeholder="e.g. My Push/Pull/Legs" style="width:100%;margin-bottom:16px;" oninput="window._buildingPlan.name=this.value">
+    <div class="label" style="margin-bottom:6px">Sessions per minicycle</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      ${[3,4,5].map(n=>`<button class="btn ${plan.minicycleSize===n?'btn-primary':'btn-secondary'}" style="flex:1" onclick="window._buildingPlan.minicycleSize=${n};renderPlanBuilder()">${n}</button>`).join('')}
+    </div>
+    ${freqHtml ? `<div style="margin-bottom:16px;"><div class="label" style="margin-bottom:6px">Muscle frequency this plan</div><div>${freqHtml}</div></div>` : ''}
+    <div class="section-title">Sessions</div>`;
+
+  plan.sessions.slice(0, plan.minicycleSize).forEach((sess, si) => {
+    html += `<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="width:4px;border-radius:2px;background:${sess.color};flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <input type="text" value="${sess.focus}" placeholder="Session ${sess.key} focus (e.g. Push — Chest, Delts)" style="width:100%;font-size:13px;" oninput="window._buildingPlan.sessions[${si}].focus=this.value">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Session ${sess.key} · ${sess.exercises.length} exercises</div>
+      <div id="pb-ex-list-${si}">${sess.exercises.map((ex,ei)=>{
+        const exData = getExercise(ex.exerciseId);
+        return exData ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <span>${exData.name}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--muted);">${ex.targetSets}×${ex.targetReps}</span>
+            <button onclick="removePlanExercise(${si},${ei})" style="background:none;border:none;color:var(--warn);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
+          </div>
+        </div>` : '';
+      }).join('')}</div>
+      <button class="btn btn-secondary" style="width:100%;margin-top:10px;font-size:13px;" onclick="addPlanExercise(${si})">+ Add Exercise</button>
+    </div>`;
+  });
+
+  html += `<div style="display:flex;gap:10px;margin-top:16px;padding-bottom:40px;">
+    <button class="btn btn-secondary" style="flex:1" onclick="showScreen('screen-plan')">Cancel</button>
+    <button class="btn btn-primary" style="flex:1" onclick="savePlanBuilder()">Save Plan</button>
+  </div></div>`;
+
+  document.getElementById('plan-builder-body').innerHTML = html;
+}
+
+function removePlanExercise(sessIdx, exIdx) {
+  window._buildingPlan.sessions[sessIdx].exercises.splice(exIdx, 1);
+  renderPlanBuilder();
+}
+
+function addPlanExercise(sessIdx) {
+  window._pbTargetSession = sessIdx;
+  // Reuse exercise picker in a special mode
+  openModal(`<div style="padding:16px">
+    <div style="font-size:16px;font-weight:600;margin-bottom:12px">Add Exercise to Session ${window._buildingPlan.sessions[sessIdx].key}</div>
+    <input type="text" id="pb-search" placeholder="Search exercises..." style="width:100%;margin-bottom:10px;" oninput="renderPBPickerResults(this.value)">
+    <div id="pb-picker-results">${renderPBPickerHTML('')}</div>
+  </div>`);
+}
+
+function renderPBPickerHTML(q) {
+  const matches = state.exercises.filter(e => !q || e.name.toLowerCase().includes(q.toLowerCase())).slice(0,20);
+  return matches.map(e => `<div onclick="selectPBExercise('${e.id}')" style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+    <div style="font-weight:500;font-size:14px;">${e.name}</div>
+    <div style="font-size:11px;color:var(--muted);">${e.primary.join(', ')}</div>
+  </div>`).join('') || '<div style="color:var(--muted);padding:12px 0;">No matches</div>';
+}
+
+function renderPBPickerResults(q) {
+  document.getElementById('pb-picker-results').innerHTML = renderPBPickerHTML(q);
+}
+
+function selectPBExercise(exId) {
+  const si = window._pbTargetSession;
+  window._buildingPlan.sessions[si].exercises.push({
+    exerciseId: exId, targetSets: 3, targetReps: '10-12', targetRIR: '2-3'
+  });
+  closeModal();
+  renderPlanBuilder();
+}
+
+function savePlanBuilder() {
+  const plan = window._buildingPlan;
+  if (!plan.name.trim()) { showToast('Give your plan a name first'); return; }
+  const existing = state.plans.find(p=>p.id===plan.id);
+  if (existing) {
+    Object.assign(existing, plan);
+  } else {
+    state.plans.push(plan);
+  }
+  state.activePlanId = plan.id;
+  save();
+  showToast('Plan saved!');
+  showScreen('screen-plan');
+  renderPlan();
+}
+
+function showAIPlanBuilder() {
+  openModal(`<div style="padding:16px">
+    <div style="font-size:17px;font-weight:700;margin-bottom:8px;">AI Plan Recommendation</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Describe your goals and any focus areas for this mesocycle. The AI will generate a full plan you can edit.</div>
+    <textarea id="ai-plan-goals" rows="4" style="width:100%;margin-bottom:12px;" placeholder="e.g. Focus on hypertrophy, keep volume moderate, prioritize legs and back, avoid anything aggravating my shoulder..."></textarea>
+    <button class="btn btn-primary btn-full" onclick="requestAIPlan()">Generate Plan</button>
+  </div>`);
+}
+
+async function requestAIPlan() {
+  const goals = document.getElementById('ai-plan-goals').value.trim() || 'General hypertrophy, balanced plan';
+  document.getElementById('modal-content').innerHTML = `<div style="padding:32px;text-align:center;"><div style="font-size:24px;margin-bottom:12px;">✨</div><div style="color:var(--muted);">Building your plan...</div></div>`;
+
+  const injCtx = buildInjuryContext();
+  const exList = state.exercises.slice(0,40).map(e=>`${e.id}:${e.name}(${e.primary.join(',')})`).join(';');
+
+  const prompt = `You are a strength training coach. Create a 4-session workout plan (A/B/C/D) for this athlete.
+
+Goals: ${goals}
+Available exercises (id:name:primary_muscles): ${exList}
+
+Constraints: ${injCtx}
+
+Return ONLY valid JSON in this exact format, no other text:
+{
+  "name": "Plan name",
+  "sessions": [
+    { "key":"A", "focus":"Session A focus", "exercises": [{"exerciseId":"e1","targetSets":4,"targetReps":"10-12","targetRIR":"2-3"}] },
+    { "key":"B", "focus":"Session B focus", "exercises": [] },
+    { "key":"C", "focus":"Session C focus", "exercises": [] },
+    { "key":"D", "focus":"Session D focus", "exercises": [] }
+  ]
+}`;
+
+  try {
+    const response = await callClaude([{role:'user',content:prompt}], '');
+    // Parse the JSON from response
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    const planData = JSON.parse(jsonMatch[0]);
+
+    const newPlan = {
+      id: uid(),
+      name: planData.name || 'AI Generated Plan',
+      minicycleSize: 4,
+      sessions: ['A','B','C','D'].map((key,i) => {
+        const s = planData.sessions.find(ps=>ps.key===key) || {focus:'',exercises:[]};
+        const colors = ['#c8f135','#6eaecf','#f1a035','#cf6ecf'];
+        return { key, name:'Session '+key, focus:s.focus||'', color:colors[i], warmup:[], exercises:(s.exercises||[]) };
+      })
+    };
+    closeModal();
+    window._buildingPlan = newPlan;
+    renderPlanBuilder();
+    showScreen('screen-plan-builder');
+  } catch(e) {
+    document.getElementById('modal-content').innerHTML = `<div style="padding:16px"><div style="color:var(--warn);margin-bottom:12px;">Failed to generate plan: ${e.message}</div><button class="btn btn-secondary btn-full" onclick="closeModal()">Close</button></div>`;
+  }
+}
+
+function switchActivePlan(planId) {
+  state.activePlanId = planId;
+  save();
+  renderPlan();
+  showToast('Plan switched!');
+}
+
+function deletePlan(planId) {
+  if (state.plans.length <= 1) { showToast('Cannot delete the only plan'); return; }
+  if (!confirm('Delete this plan?')) return;
+  state.plans = state.plans.filter(p=>p.id!==planId);
+  if (state.activePlanId === planId) state.activePlanId = state.plans[0].id;
+  save();
+  renderPlan();
 }
 
 // ─── INSTANT WORKOUT ─────────────────────────────────────────────────────────
@@ -1739,11 +2045,118 @@ function closeModal(e) {
 
 load();
 renderHome();
+setTimeout(checkResumeDraft, 400);
 
 document.getElementById('screen-plan').addEventListener('transitionend', renderPlan);
 document.querySelector('[onclick="showScreen(\'screen-plan\')"]').addEventListener('click', () => {
   setTimeout(renderPlan, 50);
 });
+
+
+// ─── INJURY PROFILE ───────────────────────────────────────────────────────────
+
+function showInjuryProfile() {
+  renderInjuryProfile();
+  showScreen('screen-injury');
+}
+
+function renderInjuryProfile() {
+  const injuries = state.injuryProfile || [];
+  let html = '<div style="padding:16px;">';
+  html += '<div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Your diagnoses are used by the AI coach to tailor programming and flag risks.</div>';
+
+  if (!injuries.length) {
+    html += '<div style="text-align:center;padding:24px;color:var(--muted);">No diagnoses added yet</div>';
+  } else {
+    injuries.forEach((inj, i) => {
+      const sColor = inj.severity==='permanent'?'var(--warn)':inj.severity==='active'?'#f1a035':'var(--green)';
+      html += '<div class="card" style="margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+        '<div style="flex:1;">' +
+        '<div style="font-weight:600;font-size:14px;">' + inj.diagnosis + '</div>' +
+        (inj.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:4px;">' + inj.notes + '</div>' : '') +
+        '<span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:10px;font-size:11px;background:' + sColor + ';color:var(--bg)">' + inj.severity + '</span>' +
+        '</div>' +
+        '<button onclick="removeInjury(' + i + ')" style="background:none;border:none;color:var(--warn);font-size:18px;cursor:pointer;padding:0 4px;">×</button>' +
+        '</div></div>';
+    });
+  }
+
+  html += '<button class="btn btn-primary btn-full" style="margin-top:8px;" onclick="showAddInjuryModal()">+ Add Diagnosis</button></div>';
+  document.getElementById('injury-body').innerHTML = html;
+}
+
+function showAddInjuryModal() {
+  openModal('<div style="padding:16px;">' +
+    '<div style="font-size:16px;font-weight:600;margin-bottom:12px;">Add Diagnosis</div>' +
+    '<div class="label" style="margin-bottom:4px;">Diagnosis / Condition</div>' +
+    '<input type="text" id="inj-diagnosis" placeholder="e.g. Greater Trochanteric Pain Syndrome" style="width:100%;margin-bottom:12px;">' +
+    '<div class="label" style="margin-bottom:4px;">Notes / Restrictions</div>' +
+    '<textarea id="inj-notes" rows="3" style="width:100%;margin-bottom:12px;" placeholder="e.g. No overhead pressing, avoid deep hip flexion under load..."></textarea>' +
+    '<div class="label" style="margin-bottom:8px;">Status</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:16px;">' +
+    '<button id="sev-permanent" class="btn btn-sm btn-secondary" onclick="setInjSeverity('permanent')" style="flex:1;">Permanent</button>' +
+    '<button id="sev-active" class="btn btn-sm btn-secondary" onclick="setInjSeverity('active')" style="flex:1;">Active</button>' +
+    '<button id="sev-resolved" class="btn btn-sm btn-secondary" onclick="setInjSeverity('resolved')" style="flex:1;">Resolved</button>' +
+    '</div>' +
+    '<button class="btn btn-primary btn-full" onclick="saveInjury()">Save</button>' +
+    '</div>');
+  window._injSeverity = 'active';
+  setInjSeverity('active');
+}
+
+function setInjSeverity(s) {
+  window._injSeverity = s;
+  ['permanent','active','resolved'].forEach(function(v) {
+    const btn = document.getElementById('sev-'+v);
+    if(btn) btn.className = 'btn btn-sm ' + (v===s ? 'btn-primary' : 'btn-secondary');
+  });
+}
+
+function saveInjury() {
+  const diagnosis = (document.getElementById('inj-diagnosis').value||'').trim();
+  if (!diagnosis) { showToast('Enter a diagnosis'); return; }
+  if (!state.injuryProfile) state.injuryProfile = [];
+  state.injuryProfile.push({
+    diagnosis: diagnosis,
+    notes: (document.getElementById('inj-notes').value||'').trim(),
+    severity: window._injSeverity || 'active',
+    added: new Date().toISOString()
+  });
+  save();
+  closeModal();
+  renderInjuryProfile();
+  showToast('Diagnosis saved');
+}
+
+function removeInjury(idx) {
+  if (!confirm('Remove this diagnosis?')) return;
+  state.injuryProfile.splice(idx, 1);
+  save();
+  renderInjuryProfile();
+}
+
+// ─── MESOCYCLE TRANSITION ────────────────────────────────────────────────────
+
+function checkMesoTransition() {
+  const plan = getActivePlan();
+  const minicyclesDone = Math.floor(state.sessions.length / plan.minicycleSize);
+  const targetMesos = state.minicyclesPerMeso || 5;
+  if (minicyclesDone > 0 && minicyclesDone % targetMesos === 0 && !state._mesoPromptShown) {
+    state._mesoPromptShown = true;
+    save();
+    setTimeout(function() {
+      openModal('<div style="padding:16px;">' +
+        '<div style="font-size:24px;text-align:center;margin-bottom:8px;">🏆</div>' +
+        '<div style="font-size:17px;font-weight:700;text-align:center;margin-bottom:8px;">Mesocycle Complete!</div>' +
+        '<div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;">You've completed ' + targetMesos + ' minicycles. Time to plan your next mesocycle.</div>' +
+        '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        '<button class="btn btn-primary btn-full" onclick="closeModal();state.currentMesocycle++;state._mesoPromptShown=false;save();showNewPlanModal()">Start New Mesocycle + New Plan</button>' +
+        '<button class="btn btn-secondary btn-full" onclick="closeModal();state.currentMesocycle++;state._mesoPromptShown=false;save();renderHome()">Keep Current Plan</button>' +
+        '</div></div>');
+    }, 1500);
+  }
+}
 
   function exportBackup() {
     try {
