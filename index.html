@@ -1658,6 +1658,7 @@ function renderPlan() {
     </div>`
   ).join('');
 
+  html += `<div class="card" style="margin-top:20px;border-color:var(--accent)"><div class="card-title">Data Backup &amp; Restore<\/div><p style="color:var(--muted);font-size:13px;margin:8px 0 14px">Save your workout history as a file to prevent data loss.<\/p><button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="exportBackup()">&#8659; Export Backup<\/button><label style="display:block;width:100%;text-align:center;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:15px;font-weight:500">&#8657; Import Backup<input type=\"file\" accept=\".json\" style=\"display:none\" onchange=\"importBackup(this.files[0])\"><\/label><\/div>`;
   document.getElementById('plan-body').innerHTML = html;
 }
 
@@ -1743,6 +1744,44 @@ document.getElementById('screen-plan').addEventListener('transitionend', renderP
 document.querySelector('[onclick="showScreen(\'screen-plan\')"]').addEventListener('click', () => {
   setTimeout(renderPlan, 50);
 });
+
+  function exportBackup() {
+    try {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('tl_')) {
+          data[key] = localStorage.getItem(key);
+        }
+      }
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date();
+      const ds = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+      a.href = url; a.download = 'trainlog-backup-'+ds+'.json'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup downloaded!');
+    } catch(e) { showToast('Export failed: '+e.message); }
+  }
+  function importBackup(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        let count = 0;
+        for (const key of Object.keys(data)) {
+          if (key.startsWith('tl_')) { localStorage.setItem(key, data[key]); count++; }
+        }
+        showToast('Restored '+count+' records! Reloading...');
+        setTimeout(() => location.reload(), 1800);
+      } catch(err) { showToast('Restore failed: '+err.message); }
+    };
+    reader.readAsText(file);
+  }
+
 </script>
 </body>
 </html>
