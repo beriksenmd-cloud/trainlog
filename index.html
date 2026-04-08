@@ -2095,14 +2095,14 @@ function showAddInjuryModal() {
     '<textarea id="inj-notes" rows="3" style="width:100%;margin-bottom:12px;" placeholder="e.g. No overhead pressing, avoid deep hip flexion under load..."></textarea>' +
     '<div class="label" style="margin-bottom:8px;">Status</div>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px;">' +
-    '<button id="sev-permanent" class="btn btn-sm btn-secondary" onclick="setInjSeverity('permanent')" style="flex:1;">Permanent</button>' +
-    '<button id="sev-active" class="btn btn-sm btn-secondary" onclick="setInjSeverity('active')" style="flex:1;">Active</button>' +
-    '<button id="sev-resolved" class="btn btn-sm btn-secondary" onclick="setInjSeverity('resolved')" style="flex:1;">Resolved</button>' +
+    '<button id="sev-permanent" class="btn btn-sm btn-secondary" onclick="setInjSeverity(&#39;permanent&#39;)" style="flex:1;">Permanent</button>' +
+    '<button id="sev-active" class="btn btn-sm btn-secondary" onclick="setInjSeverity(&#39;active&#39;)" style="flex:1;">Active</button>' +
+    '<button id="sev-resolved" class="btn btn-sm btn-secondary" onclick="setInjSeverity(&#39;resolved&#39;)" style="flex:1;">Resolved</button>' +
     '</div>' +
     '<button class="btn btn-primary btn-full" onclick="saveInjury()">Save</button>' +
     '</div>');
   window._injSeverity = 'active';
-  setInjSeverity('active');
+  setInjSeverity(&#39;active&#39;);
 }
 
 function setInjSeverity(s) {
