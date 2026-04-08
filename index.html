@@ -608,7 +608,7 @@ function buildInjuryContext() {
   ).join('\n');
   return base + `\n\nINJURY PROFILE (respect these always):\n` + constraints + `\n\nTRAINING PRINCIPLES: Progressive overload, full pain-free ROM, eccentric emphasis, 0-1 RIR last set, 1-4 RIR working sets, 8-20 rep range, frequency over single-session volume.`;
 }
-const INJURY_CONTEXT = buildInjuryContext();
+// INJURY_CONTEXT computed dynamically
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -1353,7 +1353,7 @@ function buildChatFromPost(ratings) {
     return `${e.name}: ${sets}${orm ? ` (Est 1RM: ${orm}lb)` : ''}${!e.goalMet ? ' [MISSED GOAL]' : ''}`;
   }).join('\n');
 
-  const systemPrompt = `${INJURY_CONTEXT}
+  const systemPrompt = `${buildInjuryContext()}
 
 Session completed: ${lastPostSession.sessionName} (${lastPostSession.sessionFocus})
 Date: ${new Date(lastPostSession.date).toLocaleDateString()}
@@ -1391,7 +1391,7 @@ async function callClaude(messages, systemPrompt) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: systemPrompt || INJURY_CONTEXT,
+        system: systemPrompt || buildInjuryContext(),
         messages
       })
     });
@@ -1420,7 +1420,7 @@ async function sendChat() {
   chatHistory.push({ role:'user', content:msg });
   addChatBubble('ai', '...');
 
-  const systemPrompt = chatHistory[0]?.role === 'system' ? chatHistory[0].content : INJURY_CONTEXT;
+  const systemPrompt = chatHistory[0]?.role === 'system' ? chatHistory[0].content : buildInjuryContext();
   const messages = chatHistory.filter(m => m.role !== 'system');
 
   const reply = await callClaude(messages, systemPrompt);
