@@ -169,7 +169,7 @@ select option { background: var(--surface2); }
 
 .input-row {
   display: grid;
-  grid-template-columns: 2rem 1fr 1fr 1fr;
+  grid-template-columns: 3rem 1fr 1fr 1.5fr;
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
@@ -439,6 +439,39 @@ select option { background: var(--surface2); }
 }
 
 .rm-display .rm-val { font-size: 15px; font-weight: 600; color: var(--accent); font-family: monospace; }
+
+.set-type-btn {
+  width: 2.6rem;
+  height: 2.2rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+  cursor: pointer;
+  padding: 0;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-type-btn:active { background: var(--accent); color: var(--bg); }
+.set-type-btn.warmup { color: var(--muted); border-color: var(--muted); }
+.set-type-btn.drop { color: var(--info); border-color: var(--info); }
+.set-type-btn.failure { color: var(--warn); border-color: var(--warn); }
+.orm-cell {
+  font-size: 12px;
+  color: var(--label);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+}
 </style>
 </head>
 <body>
@@ -631,7 +664,7 @@ const DEFAULT_EXERCISES = [
   { id:'e5', name:'Hip Abduction Machine', primary:['Hip Abductors'], secondary:['Glutes'], equipment:'Machine', notes:'SKIP if any trochanter pinching.' },
   { id:'e6', name:'Seated Calf Raise', primary:['Calves'], secondary:[], equipment:'Machine', notes:'Full ROM. 3s eccentric. NO standing variations.' },
   { id:'e7', name:'DB Romanian Deadlift', primary:['Hamstrings','Glutes'], secondary:['Lower Back'], equipment:'Dumbbell', notes:'3s eccentric. Full hamstring stretch at bottom.' },
-  { id:'e8', name:'Single-Leg RDL', primary:['Hamstrings','Glutes','Hip Abductors'], secondary:['Lower Back'], equipment:'Barbell', notes:'Hips square. R side: extra balance focus.' },
+  { id:'e8', name:'DB Single-Leg RDL', primary:['Hamstrings','Glutes','Hip Abductors'], secondary:['Lower Back'], equipment:'Barbell', notes:'Hips square. R side: extra balance focus.' },
   { id:'e9', name:'Seated Leg Curl', primary:['Hamstrings'], secondary:[], equipment:'Machine', notes:'Seated preferred — long-length loading. Pause at peak.' },
   { id:'e10', name:'45° Back Extension', primary:['Glutes','Hamstrings'], secondary:['Lower Back'], equipment:'Bodyweight', notes:'Round upper back slightly to bias glutes.' },
   { id:'e11', name:'Cable Chest Fly', primary:['Chest'], secondary:['Front Delt'], equipment:'Cable', notes:'Stop at shoulder parallel — NOT behind. Slow eccentric.' },
@@ -640,18 +673,18 @@ const DEFAULT_EXERCISES = [
   { id:'e14', name:'Machine Shoulder Press', primary:['Front Delt','Side Delt'], secondary:['Triceps'], equipment:'Machine', notes:'SKIP if any impingement. No overhead barbell ever.' },
   { id:'e15', name:'Cable Tricep Pushdown', primary:['Triceps'], secondary:[], equipment:'Cable', notes:'Rope attachment. Slight forward lean. Full extension.' },
   { id:'e16', name:'Overhead Cable Tricep Extension', primary:['Triceps'], secondary:[], equipment:'Cable', notes:'Monitor L shoulder. Stop if any impingement.' },
-  { id:'e17', name:'Chest-Supported Row', primary:['Lats','Rhomboids'], secondary:['Biceps','Rear Delt'], equipment:'Machine', notes:'Full stretch at bottom. Squeeze scapulae at top.' },
-  { id:'e18', name:'Lat Pulldown', primary:['Lats'], secondary:['Biceps','Rhomboids'], equipment:'Cable', notes:'Neutral grip. Full stretch at top. Control eccentric.' },
-  { id:'e19', name:'Cable Row', primary:['Rhomboids','Lats'], secondary:['Biceps','Rear Delt'], equipment:'Cable', notes:'Full forward lean at start. Pull to lower sternum.' },
-  { id:'e20', name:'Rear Delt Fly', primary:['Rear Delt'], secondary:['Rhomboids'], equipment:'Cable', notes:'Lead with elbow. Full ROM. Dont shrug.' },
-  { id:'e21', name:'Face Pull', primary:['Rear Delt'], secondary:['Traps','Serratus'], equipment:'Cable', notes:'Pull to forehead. Elbows high. Never skip — shoulder health.' },
+  { id:'e17', name:'Machine Chest-Supported Row', primary:['Lats','Rhomboids'], secondary:['Biceps','Rear Delt'], equipment:'Machine', notes:'Full stretch at bottom. Squeeze scapulae at top.' },
+  { id:'e18', name:'Cable Lat Pulldown', primary:['Lats'], secondary:['Biceps','Rhomboids'], equipment:'Cable', notes:'Neutral grip. Full stretch at top. Control eccentric.' },
+  { id:'e19', name:'Cable Seated Row', primary:['Rhomboids','Lats'], secondary:['Biceps','Rear Delt'], equipment:'Cable', notes:'Full forward lean at start. Pull to lower sternum.' },
+  { id:'e20', name:'Cable Rear Delt Fly', primary:['Rear Delt'], secondary:['Rhomboids'], equipment:'Cable', notes:'Lead with elbow. Full ROM. Dont shrug.' },
+  { id:'e21', name:'Cable Face Pull', primary:['Rear Delt'], secondary:['Traps','Serratus'], equipment:'Cable', notes:'Pull to forehead. Elbows high. Never skip — shoulder health.' },
   { id:'e22', name:'Incline DB Curl', primary:['Biceps'], secondary:['Forearms'], equipment:'Dumbbell', notes:'Full hang at bottom. Slow eccentric. Long-length loading.' },
   { id:'e23', name:'Cable Curl', primary:['Biceps'], secondary:['Forearms'], equipment:'Cable', notes:'Single arm. Full supination at top. Control descent.' },
   { id:'e24', name:'Cable Crunch', primary:['Abs'], secondary:['Obliques'], equipment:'Cable', notes:'Kneeling. Hips fixed. Pull with abs not arms.' },
-  { id:'e25', name:'Dead Bug', primary:['Abs'], secondary:['Hip Flexors'], equipment:'Bodyweight', notes:'Lower back pressed to floor throughout. Slow.' },
-  { id:'e26', name:'Pallof Press', primary:['Abs','Obliques'], secondary:[], equipment:'Cable', notes:'Anti-rotation. Pause 2s extended. Tall stance.' },
-  { id:'e27', name:'Glute Bridge', primary:['Glutes','Hip Abductors'], secondary:['Hamstrings'], equipment:'Bodyweight', notes:'Band above knees. 2s hold at top. Corrective.' },
-  { id:'e28', name:'Clamshell', primary:['Hip Abductors'], secondary:['Glutes'], equipment:'Band', notes:'Light band. R side focus. Feel glute not TFL.' },
+  { id:'e25', name:'BW Dead Bug', primary:['Abs'], secondary:['Hip Flexors'], equipment:'Bodyweight', notes:'Lower back pressed to floor throughout. Slow.' },
+  { id:'e26', name:'Cable Pallof Press', primary:['Abs','Obliques'], secondary:[], equipment:'Cable', notes:'Anti-rotation. Pause 2s extended. Tall stance.' },
+  { id:'e27', name:'BW Glute Bridge', primary:['Glutes','Hip Abductors'], secondary:['Hamstrings'], equipment:'Bodyweight', notes:'Band above knees. 2s hold at top. Corrective.' },
+  { id:'e28', name:'Band Clamshell', primary:['Hip Abductors'], secondary:['Glutes'], equipment:'Band', notes:'Light band. R side focus. Feel glute not TFL.' },
 ];
 
 const DEFAULT_PLAN = {
@@ -966,10 +999,10 @@ function startLog(sessionKey) {
         suggestedReps,
         skipped: false,
         skipNote: '',
-        sets: Array.from({ length: ex.targetSets }, () => ({
-          weight: suggestedWeight ? String(suggestedWeight) : '',
-          reps: String(suggestedReps),
-          rir: ex.targetRIR.split('-')[0]
+        sets: Array.from({ length: ex.targetSets }, (_, i) => ({
+          weight: '',
+          reps: '',
+          type: i === 0 ? 'warmup' : 'working'
         }))
       };
     }),
@@ -1013,11 +1046,11 @@ function renderLog() {
   }
 
   // Exercise headers
-  html += `<div style="display:grid;grid-template-columns:2rem 1fr 1fr 1fr;gap:6px;padding:0 2px;margin-bottom:4px;">
+  html += `<div style="display:grid;grid-template-columns:3rem 1fr 1fr 1.5fr;gap:6px;padding:0 2px;margin-bottom:4px;">
     <div></div>
     <div class="label" style="margin:0;">LBS</div>
     <div class="label" style="margin:0;">REPS</div>
-    <div class="label" style="margin:0;">RIR</div>
+    <div class="label" style="margin:0;">1RM</div>
   </div>`;
 
   // Exercises
@@ -1055,10 +1088,10 @@ function renderLog() {
     if (!ex.skipped) {
       ex.sets.forEach((set, setIdx) => {
         html += `<div class="input-row">
-          <div class="set-num">${setIdx + 1}</div>
-          <input type="number" inputmode="decimal" value="${set.weight}" placeholder="lbs" onchange="updateSet(${exIdx},${setIdx},'weight',this.value)" style="text-align:center;">
-          <input type="number" inputmode="decimal" value="${set.reps}" placeholder="reps" onchange="updateSet(${exIdx},${setIdx},'reps',this.value)" style="text-align:center;">
-          <input type="number" inputmode="decimal" value="${set.rir}" placeholder="RIR" onchange="updateSet(${exIdx},${setIdx},'rir',this.value)" style="text-align:center;">
+          <button class="set-type-btn ${(set.type||'working')==='warmup'?'warmup':(set.type||'working')==='drop'?'drop':(set.type||'working')==='failure'?'failure':''}" onclick="cycleSetType(${exIdx},${setIdx})">${getSetLabel(ex.sets,setIdx)}</button>
+          <input type="number" inputmode="decimal" value="${set.weight}" placeholder="${ex.suggestedWeight ? ex.suggestedWeight + ' lbs' : 'lbs'}" onchange="updateSet(${exIdx},${setIdx},'weight',this.value)" style="text-align:center;">
+          <input type="number" inputmode="decimal" value="${set.reps}" placeholder="${ex.suggestedReps ? ex.suggestedReps + ' reps' : 'reps'}" onchange="updateSet(${exIdx},${setIdx},'reps',this.value)" style="text-align:center;">
+          <div class="orm-cell" id="orm-${exIdx}-${setIdx}">${(set.weight && set.reps) ? Math.round(parseFloat(set.weight)*(1+parseFloat(set.reps)/30)) : (ex.suggestedWeight ? Math.round(parseFloat(ex.suggestedWeight)*(1+(ex.suggestedReps||12)/30)) : '—')}</div>
         </div>`;
       });
 
@@ -1066,6 +1099,7 @@ function renderLog() {
         <button class="btn btn-ghost btn-sm" onclick="addSet(${exIdx})">+ Set</button>
         <button class="btn btn-ghost btn-sm" onclick="removeSet(${exIdx})">− Set</button>
         <button class="btn btn-ghost btn-sm" onclick="swapExercise(${exIdx})" style="margin-left:auto;">Swap</button>
+        <button class="btn btn-ghost btn-sm" onclick="showExerciseDetail(currentLog.exercises[${exIdx}].exerciseId)" style="padding:2px 8px;">📚</button>
       </div>`;
     }
 
@@ -1073,7 +1107,8 @@ function renderLog() {
   });
 
   // Add custom exercise
-  html += `<button class="btn btn-secondary btn-full" style="margin-bottom:10px;" onclick="addCustomExercise()">+ Add Exercise</button>`;
+  html += `<button class="btn btn-secondary btn-full" style="margin-bottom:10px;" onclick="addCustomExercise()">+ Add Exercise</button>
+  <button class="btn btn-ghost btn-full" style="margin-top:4px;" onclick="showAddExerciseModal()">📚 Add New Exercise to Library</button>`;
 
   // Notes
   html += `<div class="card">
@@ -1147,16 +1182,55 @@ function dismissResume() {
 }
 function updateSet(exIdx, setIdx, field, val) {
   currentLog.exercises[exIdx].sets[setIdx][field] = val;
+  const ex = currentLog.exercises[exIdx];
+  const set = ex.sets[setIdx];
+  const w = parseFloat(set.weight);
+  const r = parseFloat(set.reps);
+  const ormEl = document.getElementById('orm-' + exIdx + '-' + setIdx);
+  if (ormEl) {
+    if (w > 0 && r > 0) {
+      ormEl.textContent = Math.round(w * (1 + r / 30));
+    } else if (ex.suggestedWeight) {
+      ormEl.textContent = Math.round(parseFloat(ex.suggestedWeight) * (1 + (ex.suggestedReps || 12) / 30));
+    } else {
+      ormEl.textContent = '—';
+    }
+  }
   saveSessionDraft();
   const el = document.getElementById('log-save-status');
   if (el) el.textContent = '✓ saved';
 }
 
+function getSetLabel(sets, setIdx) {
+  const set = sets[setIdx];
+  const type = set.type || 'working';
+  if (type === 'warmup') return 'W';
+  if (type === 'drop') return 'D';
+  if (type === 'failure') return 'F';
+  // Count working sets up to and including this index
+  let workingCount = 0;
+  for (let i = 0; i <= setIdx; i++) {
+    if ((sets[i].type || 'working') === 'working') workingCount++;
+  }
+  return String(workingCount);
+}
+
+function cycleSetType(exIdx, setIdx) {
+  const set = currentLog.exercises[exIdx].sets[setIdx];
+  const types = ['working', 'warmup', 'drop', 'failure'];
+  const cur = set.type || 'working';
+  set.type = types[(types.indexOf(cur) + 1) % types.length];
+  saveSessionDraft();
+  renderLog();
+}
+
+
 function addSet(exIdx) {
   saveSessionDraft();
   const ex = currentLog.exercises[exIdx];
   const lastSet = ex.sets[ex.sets.length - 1];
-  ex.sets.push({ weight: lastSet ? lastSet.weight : '', reps: lastSet ? lastSet.reps : '', rir: lastSet ? lastSet.rir : '' });
+  ex.sets.push({ weight: lastSet ? lastSet.weight : '', reps: lastSet ? lastSet.reps : '', rir: lastSet ? lastSet.rir : '',
+        type: 'working'});
   renderLog();
 }
 
@@ -1607,7 +1681,10 @@ function showExerciseDetail(id) {
     <div class="chip-row">${e.secondary.map(m=>`<span class="muscle-chip">${m}</span>`).join('')}</div>
     <div class="label" style="margin-top:12px;">Coaching notes</div>
     <div style="font-size:14px;color:var(--label);font-style:italic;">${e.notes}</div>
-    <button class="btn btn-danger btn-sm btn-full" style="margin-top:20px;" onclick="deleteExercise('${id}')">Delete Exercise</button>`;
+    <button class="btn btn-danger btn-sm btn-full" style="margin-top:20px;" onclick="deleteExercise('${id}')">Delete Exercise</button>
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary btn-full" onclick="closeModal();showAddExerciseModal('${id}')">✏️ Edit Exercise</button>
+    </div>`;
   openModal(html);
 }
 
@@ -1619,7 +1696,7 @@ function deleteExercise(id) {
   renderLibrary();
 }
 
-function showAddExerciseModal() {
+function showAddExerciseModal(editId) {
   const muscleCheckboxes = MUSCLE_GROUPS.map(m =>
     `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;">
       <input type="checkbox" name="primary" value="${m}"> ${m}
@@ -1640,6 +1717,26 @@ function showAddExerciseModal() {
     </div>
     <div id="autofill-result" style="margin-top:10px;"></div>`;
 
+    if (editId) {
+    const _exData = getExercise(editId);
+    if (_exData) {
+      setTimeout(() => {
+        const nameEl = document.getElementById('new-ex-name');
+        const eqEl = document.getElementById('new-ex-equipment');
+        const primEl = document.getElementById('new-ex-primary');
+        const secEl = document.getElementById('new-ex-secondary');
+        const notesEl = document.getElementById('new-ex-notes');
+        if (nameEl) nameEl.value = _exData.name;
+        if (eqEl) eqEl.value = _exData.equipment;
+        if (primEl) primEl.value = (_exData.primary || []).join(', ');
+        if (secEl) secEl.value = (_exData.secondary || []).join(', ');
+        if (notesEl) notesEl.value = _exData.notes || '';
+        window._editingExId = editId;
+      }, 50);
+    }
+  } else {
+    window._editingExId = null;
+  }
   openModal(html);
 }
 
@@ -1692,6 +1789,18 @@ function saveNewExercise() {
     notes: muscles.notes || ''
   };
 
+    if (window._editingExId) {
+    const _idx = state.exercises.findIndex(e => e.id === window._editingExId);
+    if (_idx > -1) {
+      state.exercises[_idx] = { ...state.exercises[_idx], ...newEx, id: window._editingExId };
+      save();
+      closeModal();
+      showToast('Exercise updated!');
+      if (document.getElementById('screen-library') && document.getElementById('screen-library').style.display !== 'none') renderLibrary();
+      window._editingExId = null;
+      return;
+    }
+  }
   state.exercises.push(ex);
   save();
   window._pendingExerciseMuscles = null;
