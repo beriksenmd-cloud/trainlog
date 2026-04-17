@@ -977,41 +977,58 @@ function startLog(sessionKey) {
     exercises: sess.exercises.map(ex => {
       const last = getLastSetDataForExercise(sessionKey, ex.exerciseId);
       const exData = getExercise(ex.exerciseId);
-      let suggestedWeight = null;
-      let suggestedReps = ex.targetReps.split('-')[0];
 
-      if (last && last.sets && last.sets.length) {
-        const lastBestSet = last.sets.reduce((best, s) => {
-          return (parseFloat(s.weight) || 0) > (parseFloat(best.weight) || 0) ? s : best;
-        }, last.sets[0]);
-        const goalMet = last.goalMet !== false;
-        suggestedWeight = goalMet ? calcSuggestedWeight(parseFloat(lastBestSet.weight)) : parseFloat(lastBestSet.weight);
-        suggestedReps = lastBestSet.reps || suggestedReps;
+      const lastWorkingSets = last
+        ? last.sets.filter(s => !s.type || s.type === 'working')
+        : [];
+
+      const lastBestSet = last
+        ? last.sets.reduce((best, s) =>
+            (parseFloat(s.weight) || 0) > (parseFloat(best.weight) || 0) ? s : best,
+            last.sets[0])
+        : null;
+
+      const goalMet = last ? last.goalMet !== false : true;
+
+      const lastWorkingWeight = lastBestSet ? parseFloat(lastBestSet.weight) || 0 : 0;
+      const baseWorkingWeight = lastWorkingWeight > 0
+        ? (goalMet ? calcSuggestedWeight(lastWorkingWeight) : lastWorkingWeight)
+        : null;
+
+      let suggestedWeight = baseWorkingWeight;
+      let suggestedReps = lastBestSet
+        ? lastBestSet.reps || ex.targetReps.split('-')[0]
+        : ex.targetReps.split('-')[0];
+
+      if (!last && !state.sessions.length) {
+        suggestedWeight = null;
+        suggestedReps = ex.targetReps.split('-')[0];
       }
 
       return {
         exerciseId: ex.exerciseId,
-        name: exData ? exData.name : 'Unknown',
+        name: exData ? exData.name : ex.exerciseId,
         targetSets: ex.targetSets,
         targetReps: ex.targetReps,
         targetRIR: ex.targetRIR,
-        suggestedWeight,
-        suggestedReps,
         skipped: false,
         skipNote: '',
+        suggestedWeight,
+        suggestedReps,
+        goalMet,
+        lastSets: last ? last.sets : [],
         sets: Array.from({ length: ex.targetSets }, (_, i) => ({
           weight: '',
           reps: '',
           type: i === 0 ? 'warmup' : 'working'
         }))
       };
-    }),
-    notes: '',
-    customExercises: []
+    })
   };
 
-  renderLog();
   showScreen('screen-log');
+  renderLog();
+  checkResumeDraft();
 }
 
 function renderLog() {
@@ -1089,9 +1106,9 @@ function renderLog() {
       ex.sets.forEach((set, setIdx) => {
         html += `<div class="input-row">
           <button class="set-type-btn ${(set.type||'working')==='warmup'?'warmup':(set.type||'working')==='drop'?'drop':(set.type||'working')==='failure'?'failure':''}" onclick="cycleSetType(${exIdx},${setIdx})">${getSetLabel(ex.sets,setIdx)}</button>
-          <input type="number" inputmode="decimal" value="${set.weight}" placeholder="${ex.suggestedWeight ? ex.suggestedWeight + ' lbs' : 'lbs'}" onchange="updateSet(${exIdx},${setIdx},'weight',this.value)" style="text-align:center;">
+          <input type="number" inputmode="decimal" value="${set.weight}" placeholder="${(() => { const sw = getSetSuggestedWeight(ex, setIdx); return sw !== null ? sw + ' lbs' : (ex.suggestedWeight ? ex.suggestedWeight + ' lbs' : 'lbs'); })()}" onchange="updateSet(${exIdx},${setIdx},'weight',this.value)" style="text-align:center;">
           <input type="number" inputmode="decimal" value="${set.reps}" placeholder="${ex.suggestedReps ? ex.suggestedReps + ' reps' : 'reps'}" onchange="updateSet(${exIdx},${setIdx},'reps',this.value)" style="text-align:center;">
-          <div class="orm-cell" id="orm-${exIdx}-${setIdx}">${(set.weight && set.reps) ? Math.round(parseFloat(set.weight)*(1+parseFloat(set.reps)/30)) : (ex.suggestedWeight ? Math.round(parseFloat(ex.suggestedWeight)*(1+(ex.suggestedReps||12)/30)) : '—')}</div>
+          <div class="orm-cell" id="orm-${exIdx}-${setIdx}">${(set.weight && set.reps) ? Math.round(parseFloat(set.weight)*(1+parseFloat(set.reps)/30)) : (() => { const sw = getSetSuggestedWeight(ex, setIdx); const w = sw !== null ? sw : (parseFloat(ex.suggestedWeight)||0); return w > 0 ? Math.round(w*(1+(parseFloat(ex.suggestedReps)||12)/30)) : '—'; })()}</div>
         </div>`;
       });
 
@@ -1190,16 +1207,67 @@ function updateSet(exIdx, setIdx, field, val) {
   if (ormEl) {
     if (w > 0 && r > 0) {
       ormEl.textContent = Math.round(w * (1 + r / 30));
-    } else if (ex.suggestedWeight) {
-      ormEl.textContent = Math.round(parseFloat(ex.suggestedWeight) * (1 + (ex.suggestedReps || 12) / 30));
     } else {
-      ormEl.textContent = '—';
+      const sw = getSetSuggestedWeight(ex, setIdx);
+      const refW = sw !== null ? sw : (parseFloat(ex.suggestedWeight) || 0);
+      ormEl.textContent = refW > 0 ? Math.round(refW * (1 + (parseFloat(ex.suggestedReps) || 12) / 30)) : '—';
     }
   }
   saveSessionDraft();
   const el = document.getElementById('log-save-status');
   if (el) el.textContent = '✓ saved';
 }
+
+function getSetSuggestedWeight(ex, setIdx) {
+  const set = ex.sets[setIdx];
+  const type = set.type || 'working';
+  const lastSets = ex.lastSets || [];
+  const lastWorkingSets = lastSets.filter(s => !s.type || s.type === 'working');
+  const baseWeight = ex.suggestedWeight ? parseFloat(ex.suggestedWeight) : null;
+
+  if (!baseWeight && lastWorkingSets.length === 0) return null;
+
+  if (type === 'warmup') {
+    const ref = baseWeight || (lastWorkingSets[0] ? parseFloat(lastWorkingSets[0].weight) : null);
+    if (!ref) return null;
+    return Math.round(ref * 0.6 / 5) * 5;
+  }
+
+  if (type === 'drop') {
+    let refWeight = baseWeight;
+    for (let i = setIdx - 1; i >= 0; i--) {
+      const prev = ex.sets[i];
+      if ((prev.type || 'working') === 'working') {
+        refWeight = parseFloat(prev.weight) || getSetSuggestedWeight(ex, i) || baseWeight;
+        break;
+      }
+    }
+    if (!refWeight) return null;
+    return Math.round(refWeight * 0.75 / 5) * 5;
+  }
+
+  if (type === 'failure') {
+    if (setIdx > 0) {
+      const prev = ex.sets[setIdx - 1];
+      return parseFloat(prev.weight) || getSetSuggestedWeight(ex, setIdx - 1) || baseWeight;
+    }
+    return baseWeight;
+  }
+
+  // Working set: per-position from last session
+  let workingIdx = 0;
+  for (let i = 0; i < setIdx; i++) {
+    if ((ex.sets[i].type || 'working') === 'working') workingIdx++;
+  }
+  if (lastWorkingSets[workingIdx]) {
+    const lastW = parseFloat(lastWorkingSets[workingIdx].weight);
+    if (lastW > 0) {
+      return ex.goalMet !== false ? calcSuggestedWeight(lastW) : lastW;
+    }
+  }
+  return baseWeight;
+}
+
 
 function getSetLabel(sets, setIdx) {
   const set = sets[setIdx];
