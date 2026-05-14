@@ -11,9 +11,9 @@ When starting a new conversation, paste this + attach `index.html`:
 > "Continuing TrainLog PWA development. Single HTML file, iPhone Safari, localStorage. My injury profile and full spec are in my memory profile. Phase 1 is complete. [Describe what you need]."
 
 **Key files:**
-- `index.html` â the entire app
-- `README.md` â this file (context + changelog)
-- `trainlog-spec.md` â full product specification
+- `index.html` Ã¢ÂÂ the entire app
+- `README.md` Ã¢ÂÂ this file (context + changelog)
+- `trainlog-spec.md` Ã¢ÂÂ full product specification
 
 ---
 
@@ -23,9 +23,9 @@ When starting a new conversation, paste this + attach `index.html`:
 |---|---|
 | Left shoulder labrum repair (15yr ago) | NO overhead pressing ever |
 | Right AC joint separation (Nov 2025) | Cable flies stop at shoulder parallel; lateral raises stop below shoulder height; no barbell bench, no dips |
-| Bilateral Morton's neuroma | NO forefoot calf loading â seated calf raise only |
+| Bilateral Morton's neuroma | NO forefoot calf loading Ã¢ÂÂ seated calf raise only |
 | Right GTPS | High foot plate on leg press mandatory; avoid deep hip flexion under load |
-| Bilateral patellar tendinopathy | Mostly resolved â monitor |
+| Bilateral patellar tendinopathy | Mostly resolved Ã¢ÂÂ monitor |
 
 ---
 
@@ -33,7 +33,7 @@ When starting a new conversation, paste this + attach `index.html`:
 
 - **Platform:** PWA, iPhone Safari primary
 - **Hosting:** GitHub Pages
-- **Structure:** Single `index.html` â no build process, no frameworks, no dependencies
+- **Structure:** Single `index.html` Ã¢ÂÂ no build process, no frameworks, no dependencies
 - **Storage:** localStorage (`trainlog_v1`)
 - **AI:** Anthropic API, `claude-sonnet-4`, called directly from browser
 - **Sharing:** Each user forks the repo and hosts their own independent instance
@@ -44,7 +44,7 @@ When starting a new conversation, paste this + attach `index.html`:
 
 ### What's built and working
 
-- 4-session rotating minicycle (A/B/C/D) â not calendar week based (shift work schedule)
+- 4-session rotating minicycle (A/B/C/D) Ã¢ÂÂ not calendar week based (shift work schedule)
 - Any session can be started in any order
 - Session cards on home screen with expandable exercise preview
 - Warmup checklists per session, skippable
@@ -56,33 +56,33 @@ When starting a new conversation, paste this + attach `index.html`:
 - Progressive overload suggestions: 3% increase if goal met last session, flat if not
 - Last session reference + estimated 1RM (Epley formula) displayed per exercise
 - Post-session questionnaire: difficulty (1-5), fatigue (1-5), pain (0-10), pain exercise follow-up if >3, freehand notes
-- AI coach check-in after every session â full injury context in system prompt
+- AI coach check-in after every session Ã¢ÂÂ full injury context in system prompt
 - Conversational AI follow-up
-- Instant Workout builder â select muscle groups, get matching exercises
+- Instant Workout builder Ã¢ÂÂ select muscle groups, get matching exercises
 - Exercise library with 28 default exercises, muscle group tags, equipment category
 - AI auto-fill for new exercises (primary/secondary muscles + coaching notes)
 - Volume by muscle group chart (last 20 sessions)
 - Estimated 1RM progress tracking
 - Session history with expandable detail
-- Calendar view â days with sessions highlighted
+- Calendar view Ã¢ÂÂ days with sessions highlighted
 - localStorage persistence
 
 ### Known issues / limitations
 
-- localStorage is unreliable in Claude artifact environment (WKWebView on iOS) â works correctly on GitHub Pages in Safari
+- localStorage is unreliable in Claude artifact environment (WKWebView on iOS) Ã¢ÂÂ works correctly on GitHub Pages in Safari
 - No export/backup yet (Phase 2)
 - No mesocycle transitions yet (Phase 2)
 
 ---
 
-## Phase 2 â Planned
+## Phase 2 Ã¢ÂÂ Planned
 
-- [ ] Mesocycle transitions â prompted at end of mesocycle (4-6 minicycles)
-- [ ] AI plan builder â generates full plan based on injury profile + goals
+- [ ] Mesocycle transitions Ã¢ÂÂ prompted at end of mesocycle (4-6 minicycles)
+- [ ] AI plan builder Ã¢ÂÂ generates full plan based on injury profile + goals
 - [ ] Plan creation/editing UI
 - [ ] Muscle frequency view when building a plan
-- [ ] Configurable progression rate (2â5%)
-- [ ] Configurable minicycle size (3â5 sessions)
+- [ ] Configurable progression rate (2Ã¢ÂÂ5%)
+- [ ] Configurable minicycle size (3Ã¢ÂÂ5 sessions)
 - [ ] Pain-based auto-adjustment recommendations
 - [ ] Multiple saved plans with swap UI
 - [ ] Export / backup functionality
@@ -90,7 +90,7 @@ When starting a new conversation, paste this + attach `index.html`:
 
 ---
 
-## Phase 3 â Future
+## Phase 3 Ã¢ÂÂ Future
 
 - [ ] Wrist roller / forearm tracking
 - [ ] Deload week detection
@@ -112,18 +112,18 @@ Barbell, Dumbbell, Cable, Machine, Bodyweight, Band, Kettlebell
 
 ## Key Design Decisions
 
-- **Plates-only logging on leg press** (sled weight ignored â machine-specific, irrelevant to progression)
+- **Plates-only logging on leg press** (sled weight ignored Ã¢ÂÂ machine-specific, irrelevant to progression)
 - **Chest-supported row** = seated machine with chest pad, bilateral pull (not prone dumbbell)
-- **High foot plate on leg press** is non-negotiable â eliminates trochanteric rubbing confirmed in testing
-- **Chest fly ROM capped at shoulder parallel** â confirmed less AC joint pain at this ROM
-- **Lateral raise hard stop below shoulder height** â above parallel causes AC impingement/clicking
-- **No calendar week dependency** â minicycle rotates continuously regardless of days elapsed
+- **High foot plate on leg press** is non-negotiable Ã¢ÂÂ eliminates trochanteric rubbing confirmed in testing
+- **Chest fly ROM capped at shoulder parallel** Ã¢ÂÂ confirmed less AC joint pain at this ROM
+- **Lateral raise hard stop below shoulder height** Ã¢ÂÂ above parallel causes AC impingement/clicking
+- **No calendar week dependency** Ã¢ÂÂ minicycle rotates continuously regardless of days elapsed
 
 ---
 
 ## Changelog
 
-### Phase 1 â Initial Build
+### Phase 1 Ã¢ÂÂ Initial Build
 
 - Full app shell with iPhone PWA support (safe area insets, add to home screen)
 - Bottom navigation: Home, History, Charts, Library
@@ -138,26 +138,29 @@ Barbell, Dumbbell, Cable, Machine, Bodyweight, Band, Kettlebell
 
 ### Updates (post-initial build)
 
-- Added set history viewer — tap "History" button next to any exercise name during a workout to see the last 10 sessions with full set breakdown (weight × reps, set type labels W/D/F, RIR)
-- Fixed progressive overload reference: now scans back through all past sessions to find last recorded data, not just the immediately previous session — skipped sessions/exercises no longer wipe suggestions
-- Added "+ New Exercise" button to the in-workout exercise picker (Swap / Add from library) — opens the Add Exercise modal directly without leaving the picker flow
-- Added "Edit" button next to each exercise in the in-workout picker — tap to edit an existing library exercise's name, equipment, muscles, and notes mid-workout
+- Suggested weight/reps (ghost text) now commits as real data: blank set fields are filled with their placeholder values when finishing a session, so skipping a field doesn't lose the suggestion from history/progression
+- Tapping a blank weight or reps input now pre-fills it with the suggested value immediately, so you can see and edit it before saving
+
+- Added set history viewer â tap "History" button next to any exercise name during a workout to see the last 10 sessions with full set breakdown (weight Ã reps, set type labels W/D/F, RIR)
+- Fixed progressive overload reference: now scans back through all past sessions to find last recorded data, not just the immediately previous session â skipped sessions/exercises no longer wipe suggestions
+- Added "+ New Exercise" button to the in-workout exercise picker (Swap / Add from library) â opens the Add Exercise modal directly without leaving the picker flow
+- Added "Edit" button next to each exercise in the in-workout picker â tap to edit an existing library exercise's name, equipment, muscles, and notes mid-workout
 
 - Added warmup checklists to log screen with skip option
-- Fixed session selection â all 4 sessions always tappable, not forced order
+- Fixed session selection Ã¢ÂÂ all 4 sessions always tappable, not forced order
 - Added "Next" badge to recommended session while keeping all sessions accessible
 - Removed redundant "Next Up" card from home screen
 - Added collapsible session summary panel in AI chat view
 - Added auto-save draft with resume on reopen
-- Switched storage attempts: localStorage â window.storage â back to localStorage (window.storage fails in iOS WKWebView/Claude artifact environment; localStorage is correct for GitHub Pages Safari deployment)
-- Added visible save status indicator (â SAVED / SAVING... / â SAVE FAILED)
+- Switched storage attempts: localStorage Ã¢ÂÂ window.storage Ã¢ÂÂ back to localStorage (window.storage fails in iOS WKWebView/Claude artifact environment; localStorage is correct for GitHub Pages Safari deployment)
+- Added visible save status indicator (Ã¢ÂÂ SAVED / SAVING... / Ã¢ÂÂ SAVE FAILED)
 - Added storage error banner with user guidance
-- Confirmed: forefoot calf loading (leg press calf raises) worsens Morton's neuroma â removed from all sessions
-- Confirmed: high foot plate on leg press eliminates trochanteric rubbing â hardcoded as mandatory
-- Confirmed: chest fly ROM to shoulder parallel only â less AC joint discomfort
-- Confirmed: lateral raises hard stop below shoulder height â above causes clicking/pain
+- Confirmed: forefoot calf loading (leg press calf raises) worsens Morton's neuroma Ã¢ÂÂ removed from all sessions
+- Confirmed: high foot plate on leg press eliminates trochanteric rubbing Ã¢ÂÂ hardcoded as mandatory
+- Confirmed: chest fly ROM to shoulder parallel only Ã¢ÂÂ less AC joint discomfort
+- Confirmed: lateral raises hard stop below shoulder height Ã¢ÂÂ above causes clicking/pain
 - Clarified exercise: "Chest-Supported Row" = seated machine with chest pad (not prone)
-- Machine Chest Press pain at 3-4/10 during session â stopped, not pushed through
+- Machine Chest Press pain at 3-4/10 during session Ã¢ÂÂ stopped, not pushed through
 - Complete app rebuild from scratch (cleaner architecture, better iPhone support)
 
 ---
@@ -167,6 +170,6 @@ Barbell, Dumbbell, Cable, Machine, Bodyweight, Band, Kettlebell
 - 41 years old, male
 - 5 years training, intermediate-advanced
 - 205 lb, ~14% BF
-- Shift work schedule â irregular training days, minicycle structure preferred
+- Shift work schedule Ã¢ÂÂ irregular training days, minicycle structure preferred
 - Science-based approach: progressive overload, full ROM, eccentric emphasis, proximity to failure
 - Goals: hypertrophy, injury management, long-term progress
