@@ -1340,7 +1340,7 @@ function showSetHistory(exerciseId, nameOrIdx) {
       content += '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;font-weight:500;">' + dateStr + '</span><span style="font-size:11px;color:var(--muted);">' + (entry.sessionName||entry.sessionKey) + '</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;">';
       allSets.forEach((s,i) => {
         const label = (s.type||'working')==='warmup'?'W':(s.type==='drop'?'D':(s.type==='failure'?'F':String(i+1)));
-        const color = (s.type||'working')==='warmup'?'var(--muted)':(s.type==='drop'?'var(--orange)":'var(--label)');
+        const color = (s.type||'working')==='warmup'?'var(--muted)':(s.type==='drop'?'var(--orange)':'var(--label)');
         content += '<div style="background:var(--surface);border-radius:6px;padding:5px 7px;font-size:12px;"><span style="color:' + color + ';font-size:10px;font-weight:600;">' + label + ' </span><span class="mono">' + (s.weight||'-') + 'x' + (s.reps||'-') + '</span>' + (s.rir!==undefined&&s.rir!==''?'<span style="color:var(--muted);font-size:10px;"> @'+s.rir+'</span>':'')+'</div>';
       });
       content += '</div></div>';
